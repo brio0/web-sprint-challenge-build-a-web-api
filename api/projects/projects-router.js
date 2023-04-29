@@ -8,7 +8,11 @@ const router = express.Router()
 router.get('/', (req, res) => {
     Project.get()
         .then(project => {
-            res.status(200).json(project)
+            if (project) {
+                res.status(200).json(project)
+            } else {
+                return []
+            }
         })
         .catch(err => {
             res.status(500).json({
@@ -36,6 +40,29 @@ router.get('/:id', async (req, res) => {
 
 })
 
+router.post('/', (req, res) => {
+    const { name, description, completed } = req.body
+    if (!name || !description) {
+        res.status(400).json({
+            message: "Please provide name, description, and completed"
+        })
+    } else {
+        Project.insert({ name, description, completed })
+            .then(({ id }) => {
+                return Project.get(id)
+            })
+            .then(project => {
+                res.status(200).json(project)
+            })
+            .catch(err => {
+                res.status(500).json({
+                    message: "There was an issue while saving project to database",
+                    err: err.message,
+                    stack: err.stack
+                })
+            })
+    }
+})
 
 
 
