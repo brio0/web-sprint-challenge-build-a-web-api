@@ -16,7 +16,9 @@ router.get('/', (req, res) => {
         })
         .catch(err => {
             res.status(500).json({
-                message: 'cant'
+                message: 'error fetching project',
+                err: err.message,
+                stack: err.stack
             })
         })
 })
@@ -34,7 +36,9 @@ router.get('/:id', async (req, res) => {
         }
     } catch (err) {
         res.status(500).json({
-            message: 'error'
+            message: 'error fetching project',
+            err: err.message,
+            stack: err.stack
         })
     }
 
