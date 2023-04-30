@@ -120,6 +120,26 @@ router.delete('/:id', async (req, res) => {
     }
 })
 
+router.get('/:id/actions', async (req, res) => {
+    try {
+        const action = await Project.get(req.params.id);
+        if (!action) {
+            res.status(404).json({
+                message: "The action with specified id does not exist"
+            })
+        } else {
+            const project = await Project.getProjectActions(req.params.id)
+            res.json(project)
+        }
+    } catch (err) {
+        res.status(500).json({
+            message: "The action information could not be found",
+            err: err.message,
+            stack: err.stack
+        })
+    }
+})
+
 
 
 
