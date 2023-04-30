@@ -42,6 +42,69 @@ router.get('/:id', async (req, res) => {
     }
 })
 
+router.post('/', (req, res) => {
+    const { description, notes, completed } = req.body
+    if (!description || !notes) {
+        res.status(400).json({
+            message: "Please provide description, notes, and completed"
+        })
+    } else {
+        Actions.insert({ completed, description, notes })
+            .then(({ id }) => {
+                return Actions.get(id)
+            })
+            .then(action => {
+                const projectId =
+                    res.status(200).json(action)
+            })
+            .catch(err => {
+                res.status(500).json({
+                    message: "error creating action",
+                    err: req.body,
+                    stack: err.stack
+
+                })
+            })
+    }
+})
+
+
+router.put('/:id', (req, res) => {
+    const { description, notes, completed } = req.body
+    if (!description || !notes) {
+        res.status(400).json({
+            message: "Please provide description notes and completed"
+        })
+    } else {
+        Actions.get(req.params.id)
+            .then(stuff => {
+                if (!stuff) {
+                    res.status(404).json({
+                        message: "The action with specific id does not exist"
+                    })
+                } else {
+                    return Actions.update(req.params.id, req.body)
+                }
+            })
+            .then(data => {
+                if (data)
+                    return Actions.get(req.params.id)
+            })
+            .then(action => {
+                if (action) {
+                    res.json(action)
+                }
+            })
+            .catch(err => {
+                res.status(500).json({
+                    message: "The action information could not be retrieved",
+                    err: err.message,
+                    stack: err.stack
+                })
+            })
+    }
+})
+
 
 
 
