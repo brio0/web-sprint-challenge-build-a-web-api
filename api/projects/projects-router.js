@@ -64,6 +64,62 @@ router.post('/', (req, res) => {
     }
 })
 
+router.put('/:id', (req, res) => {
+    const { name, description, completed } = req.body
+    if (!name || !description) {
+        res.status(400).json({
+            message: "Please provide name, description, and completed"
+        })
+    } else {
+        Project.get(req.params.id)
+            .then(stuff => {
+                if (!stuff) {
+                    res.status(404).json({
+                        message: "The post with specific ID does not exist"
+                    })
+                } else {
+                    return Project.update(req.params.id, req.body)
+                }
+            })
+            .then(data => {
+                if (data)
+                    return Project.get(req.params.id)
+            })
+            .then(project => {
+                if (project) {
+                    res.json(project)
+                }
+            })
+            .catch(err => {
+                res.status(500).json({
+                    message: "The project information could not be retrieved",
+                    err: err.message,
+                    stack: err.stack,
+                })
+            })
+    }
+})
+
+router.delete('/:id', async (req, res) => {
+    try {
+        const project = await Project.get(req.params.id)
+        if (!project) {
+            res.status(404).json({
+                message: "The project with specified id does not exist"
+            })
+        } else {
+            await Project.remove(req.params.id)
+            res.json(project)
+        }
+    } catch (err) {
+        res.status(500).json({
+            message: "This project could not be deleted",
+            err: err.message,
+            stack: err.stack
+        })
+    }
+})
+
 
 
 
