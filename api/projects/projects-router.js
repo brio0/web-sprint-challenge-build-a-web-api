@@ -5,7 +5,7 @@ const Project = require('./projects-model')
 
 const router = express.Router()
 
-router.get('/', (req, res) => {
+router.get('/', (req, res, next) => {
     Project.get()
         .then(project => {
             if (project) {
@@ -14,16 +14,10 @@ router.get('/', (req, res) => {
                 return []
             }
         })
-        .catch(err => {
-            res.status(500).json({
-                message: 'error fetching project',
-                err: err.message,
-                stack: err.stack
-            })
-        })
+        .catch(next)
 })
 
-router.get('/:id', async (req, res) => {
+router.get('/:id', async (req, res, next) => {
     try {
         const { id } = req.params
         const projects = await Project.get(id)
@@ -34,17 +28,14 @@ router.get('/:id', async (req, res) => {
                 message: `no project with id: ${id}`
             })
         }
+
     } catch (err) {
-        res.status(500).json({
-            message: 'error fetching project',
-            err: err.message,
-            stack: err.stack
-        })
+        next(err)
     }
 
 })
 
-router.post('/', (req, res) => {
+router.post('/', (req, res, next) => {
     const { name, description, completed } = req.body
     if (!name || !description) {
         res.status(400).json({
@@ -58,19 +49,13 @@ router.post('/', (req, res) => {
             .then(project => {
                 res.status(200).json(project)
             })
-            .catch(err => {
-                res.status(500).json({
-                    message: "There was an issue while saving project to database",
-                    err: err.message,
-                    stack: err.stack
-                })
-            })
+            .catch(next)
     }
 })
 
-router.put('/:id', (req, res) => {
+router.put('/:id', (req, res, next) => {
     const { name, description, completed } = req.body
-    if (!name || !description) {
+    if (!name || !description || typeof completed !== "boolean") {
         res.status(400).json({
             message: "Please provide name, description, and completed"
         })
@@ -94,17 +79,11 @@ router.put('/:id', (req, res) => {
                     res.json(project)
                 }
             })
-            .catch(err => {
-                res.status(500).json({
-                    message: "The project information could not be retrieved",
-                    err: err.message,
-                    stack: err.stack,
-                })
-            })
+            .catch(next)
     }
 })
 
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', async (req, res, next) => {
     try {
         const project = await Project.get(req.params.id)
         if (!project) {
@@ -116,15 +95,11 @@ router.delete('/:id', async (req, res) => {
             res.json(project)
         }
     } catch (err) {
-        res.status(500).json({
-            message: "This project could not be deleted",
-            err: err.message,
-            stack: err.stack
-        })
+        next(err)
     }
 })
 
-router.get('/:id/actions', async (req, res) => {
+router.get('/:id/actions', async (req, res, next) => {
     try {
         const action = await Project.get(req.params.id);
         if (!action) {
@@ -136,15 +111,16 @@ router.get('/:id/actions', async (req, res) => {
             res.json(project)
         }
     } catch (err) {
-        res.status(500).json({
-            message: "The action information could not be found",
-            err: err.message,
-            stack: err.stack
-        })
+        next(err)
     }
 })
 
-
+router.use((error, req, res, next) => {
+    res.status(error.status || 500).json({
+        message: error.message,
+        customMessage: "Something went wrong in projects router"
+    })
+})
 
 
 module.exports = router

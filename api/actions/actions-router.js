@@ -1,5 +1,6 @@
 // Write your "actions" router here!
 const express = require('express')
+const { checkActionsId } = require('./actions-middlware')
 const Actions = require('./actions-model')
 
 const router = express.Router()
@@ -22,50 +23,32 @@ router.get('/', (req, res) => {
         })
 })
 
-router.get('/:id', async (req, res) => {
+router.get('/:id', checkActionsId, (req, res, next) => {
+    res.json(req.action)
+})
+
+router.post('/', async (req, res) => {
     try {
-        const { id } = req.params
-        const actions = await Actions.get(id)
-        if (actions) {
-            res.status(200).json(actions)
-        } else {
-            res.status(404).json({
-                message: `no actions with id: ${id}`
+        const { description, completed, notes, project_id } = req.body
+        if (!description || !notes) {
+            res.status(400).json({
+                message: "err"
             })
+        } else {
+            const action = await Actions.insert({ completed, description, notes, project_id })
+            if (project_id) {
+                res.status(201).json(action)
+            }
         }
-    } catch {
+    } catch (err) {
         res.status(500).json({
-            message: 'error fetching action',
+            message: "Error while posting new action",
             err: err.message,
             stack: err.stack
         })
     }
-})
 
-router.post('/', (req, res) => {
-    const { description, notes, completed } = req.body
-    if (!description || !notes) {
-        res.status(400).json({
-            message: "Please provide description, notes, and completed"
-        })
-    } else {
-        Actions.insert({ completed, description, notes })
-            .then(({ id }) => {
-                return Actions.get(id)
-            })
-            .then(action => {
-                const projectId =
-                    res.status(200).json(action)
-            })
-            .catch(err => {
-                res.status(500).json({
-                    message: "error creating action",
-                    err: req.params,
-                    stack: err.stack
 
-                })
-            })
-    }
 })
 
 
@@ -105,24 +88,18 @@ router.put('/:id', (req, res) => {
     }
 })
 
-router.delete('/:id', async (req, res) => {
-    try {
-        const action = await Actions.get(req.params.id)
-        if (!action) {
-            res.status(404).json({
-                message: "The action with specified id does not exist"
-            })
-        } else {
-            await Actions.remove(req.params.id)
-            res.json(action)
-        }
-    } catch (err) {
-        res.status(500).json({
-            message: "This project could not be deleted",
-            err: err.message,
-            stack: err.stack
+router.delete('/:id', checkActionsId, (req, res) => {
+    Actions.remove(req.params.id)
+        .then(() => {
+            res.status(200).json({ message: "the action has been deleted " })
         })
-    }
+        .catch(err => {
+            res.status(500).json({
+                message: "This project could not be deleted",
+                err: err.message,
+                stack: err.stack
+            })
+        })
 })
 
 
